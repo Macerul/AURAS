@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  # Heroes Main Application
+  heroes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: heroes_app
+    ports:
+      - "5088:5088"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - heroes_uploads:/tmp/heroes_uploads
+      - heroes_data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://heroes_user:heroes_password@postgres:5432/heroes_db
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+    restart: unless-stopped
+    networks:
+      - heroes_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: heroes_postgres
+    environment:
+      - POSTGRES_DB=heroes_db
+      - POSTGRES_USER=heroes_user
+      - POSTGRES_PASSWORD=heroes_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init/postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - heroes_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heroes_user -d heroes_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL Database (Optional)
+  mysql:
+    image: mysql:8.0
+    container_name: heroes_mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=heroes_db
+      - MYSQL_USER=heroes_user
+      - MYSQL_PASSWORD=heroes_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init/mysql:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    networks:
+      - heroes_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Caching
+  redis:
+    image: redis:7-alpine
+    container_name: heroes_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - heroes_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Ollama for AI Explanations
+  ollama:
+    image: ollama/ollama:latest
+    container_name: heroes_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./init/ollama:/scripts
+    networks:
+      - heroes_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      # Start Ollama in background
+      /bin/ollama serve &
+      
+      # Wait for Ollama to start
+      sleep 10
+      
+      # Run model download script
+      if [ -f /scripts/download-models.sh ]; then
+        echo 'Downloading Ollama models...'
+        chmod +x /scripts/download-models.sh
+        /scripts/download-models.sh
+      fi
+      
+      # Keep container running
+      wait
+      "
+
+volumes:
+  heroes_uploads:
+  heroes_data:
+  postgres_data:
+  mysql_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  heroes_network:
+    driver: bridge

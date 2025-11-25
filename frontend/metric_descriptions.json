@@ -1,0 +1,190 @@
+{
+  "fidelity": {
+    "ks_similarity": {
+      "title": "Kolmogorov-Smirnov Test",
+      "description": "Statistical test comparing the distributions of original and augmented data. Higher values (closer to 1) indicate more similar distributions.",
+      "interpretation": "Good: >0.7, Fair: 0.5-0.7, Poor: <0.5",
+      "icon": "📊"
+    },
+    "kl_divergence": {
+      "title": "KL Divergence",
+      "description": "Measures information loss when approximating the original distribution with the augmented one. Lower is better.",
+      "interpretation": "Good: <0.1, Fair: 0.1-0.3, Poor: >0.3",
+      "icon": "📉"
+    },
+    "js_divergence": {
+      "title": "Jensen-Shannon Divergence",
+      "description": "Symmetric measure of distribution similarity. Bounded between 0 (identical) and 1 (completely different).",
+      "interpretation": "Good: <0.1, Fair: 0.1-0.3, Poor: >0.3",
+      "icon": "⚖️"
+    },
+    "mmd_score": {
+      "title": "Maximum Mean Discrepancy",
+      "description": "Kernel-based measure of distance between distributions. Lower values indicate more similar distributions.",
+      "interpretation": "Good: <0.1, Fair: 0.1-0.3, Poor: >0.3",
+      "icon": "🎯"
+    },
+    "pca_similarity": {
+      "title": "PCA Similarity",
+      "description": "Compares principal component structures. Higher values mean the augmented data preserves the same variance patterns.",
+      "interpretation": "Good: >0.8, Fair: 0.6-0.8, Poor: <0.6",
+      "icon": "🔍"
+    },
+    "mean_absolute_distance": {
+      "title": "Mean Absolute Distance",
+      "description": "Average absolute distance between original and augmented records in feature space. Lower values indicate closer fidelity.",
+      "interpretation": "Good: <0.5, Fair: 0.5-1.0, Poor: >1.0",
+      "icon": "📐"
+    },
+    "statistical_moments": {
+      "title": "Statistical Moments",
+      "description": "Comparison of moments (mean, variance, skewness, kurtosis) between original and augmented distributions. Smaller differences indicate better fidelity.",
+      "interpretation": "Good: low (e.g., ≤ 0.2), indicating very small deviations in moments and high fidelity between original and augmented data. Fair: global_mean is moderate (≈ 0.2–0.5), reflecting mild shape or variance differences. Poor: global_mean is high (≥ 0.5), indicating substantial shifts in mean/variance or significant distribution mismatches.",
+      "icon": "📑"
+    },
+    "q_function": {
+      "title": "Q-Function Score",
+      "description": "Aggregated similarity across multiple sensitive features. High values indicate that correlations are well preserved, low values indicate poor multivariate coherence.",
+      "interpretation": "Poor: <0.3, Fair: 0.3-0.6, Good: >0.6",
+      "icon": "🛡️"
+    }
+  },
+  "diversity": {
+    "feature_entropy": {
+      "title": "Feature Entropy",
+      "description": "Measures the variety in feature distributions. Higher entropy indicates more diverse data.",
+      "interpretation": "Good: >3.0, Fair: 2.0-3.0, Poor: <2.0",
+      "icon": "📊"
+    },
+    "coverage_ratio": {
+      "title": "Coverage Ratio",
+      "description": "Percentage of original data space covered by augmented samples. Higher is better.",
+      "interpretation": "Good: >0.8, Fair: 0.6-0.8, Poor: <0.6",
+      "icon": "🗺️"
+    },
+    "silhouette_score": {
+      "title": "Silhouette Score",
+      "description": "Measures cluster quality. Values range from -1 to 1, with higher being better separated clusters.",
+      "interpretation": "Good: >0.5, Fair: 0.25-0.5, Poor: <0.25",
+      "icon": "🎪"
+    },
+    "davies_bouldin_index": {
+      "title": "Davies-Bouldin Index",
+      "description": "Measures cluster separation. Lower values indicate better-defined clusters.",
+      "interpretation": "Good: <1.0, Fair: 1.0-2.0, Poor: >2.0",
+      "icon": "📍"
+    },
+    "icc": {
+      "title": "Intra-Class Compactness",
+      "description": "Measures how tightly clustered the data points are. Lower values indicate more compact clusters.",
+      "interpretation": "Good: <0.5, Fair: 0.5-1.0, Poor: >1.0",
+      "icon": "🎲"
+    },
+    "intra_class_compactness": {
+      "title": "Intra-Class Compactness (alias)",
+      "description": "Alternative key for intra-class compactness (measures cluster tightness). Lower values indicate more compact clusters.",
+      "interpretation": "Good: <0.5, Fair: 0.5-1.0, Poor: >1.0",
+      "icon": "🧩"
+    },
+    "cluster_spread": {
+      "title": "Cluster Spread",
+      "description": "Average spread (e.g. mean pairwise distance) of points within clusters. Lower spread indicates tighter clusters; higher can indicate diverse intra-cluster variability.",
+      "interpretation": "Good: low spread for compact clusters, Fair: moderate spread, Poor: high spread indicating noisy clusters.",
+      "icon": "📏"
+    },
+    "intra_diversity": {
+      "title": "Intra-Cluster Diversity",
+      "description": "Measures diversity within each cluster. Higher values indicate more variety inside clusters (may be desired or not depending on goal).",
+      "interpretation": "Good: depends on use-case (higher for diverse augmentation), Fair: moderate, Poor: extremely low indicating redundancy.",
+      "icon": "🔀"
+    },
+    "range_coverage": {
+      "title": "Range Coverage",
+      "description": "Proportion of the numeric feature ranges (min-max intervals) covered by augmented samples. Higher values indicate better coverage of extremes and range.",
+      "interpretation": "Good: >0.9, Fair: 0.7-0.9, Poor: <0.7",
+      "icon": "📈"
+    }
+  },
+  "privacy": {
+    "membership_inference": {
+      "title": "Membership Inference Privacy",
+      "description": "Measures how difficult it is to determine if a record was in the original dataset. Higher is better.",
+      "interpretation": "Good: >0.7, Fair: 0.5-0.7, Poor: <0.5",
+      "icon": "🔒"
+    },
+    "nearest_neighbor_risk": {
+      "title": "Nearest Neighbor Disclosure Risk",
+      "description": "Risk of linking augmented records to original ones. Lower percentage is better.",
+      "interpretation": "Good: <10%, Fair: 10-30%, Poor: >30%",
+      "icon": "🔗"
+    },
+    "uniqueness": {
+      "title": "Uniqueness Score",
+      "description": "How unique augmented records are compared to originals. Higher means better privacy.",
+      "interpretation": "Good: >0.7, Fair: 0.5-0.7, Poor: <0.5",
+      "icon": "✨"
+    },
+    "attribute_disclosure": {
+      "title": "Attribute Disclosure Risk",
+      "description": "Probability that sensitive attributes of original records can be inferred from augmented records. Lower is better.",
+      "interpretation": "Good: <0.05, Fair: 0.05-0.15, Poor: >0.15",
+      "icon": "⚠️"
+    },
+    "distance_to_closest": {
+      "title": "Distance to Closest Record",
+      "description": "Alias for DCR — average distance from each augmented sample to its nearest original sample. Higher indicates better privacy.",
+      "interpretation": "Good: >2.0, Fair: 1.0-2.0, Poor: <1.0",
+      "icon": "📐"
+    },
+    "k_anonymity": {
+      "title": "k-Anonymity",
+      "description": "Minimum equivalence class size - ensures each record is indistinguishable from at least k-1 other records with respect to quasi-identifiers. Higher k provides better privacy protection.",
+      "interpretation": "Good: k≥5, Fair: k=3-4, Poor: k<3",
+      "icon": "🔒"
+    },
+    "l_diversity": {
+      "title": "l-Diversity",
+      "description": "Measures diversity of sensitive attributes within equivalence classes. Extends k-anonymity by requiring l distinct values of sensitive attributes in each class. Higher l provides better protection against attribute disclosure.",
+      "interpretation": "Good: l≥3, Fair: l=2, Poor: l=1",
+      "icon": "📊"
+    }
+  },
+  "utility": {
+    "accuracy": {
+      "title": "Model Accuracy",
+      "description": "Percentage of correct predictions. Measures overall model performance.",
+      "interpretation": "Good: >0.85, Fair: 0.7-0.85, Poor: <0.7",
+      "icon": "🎯"
+    },
+    "precision": {
+      "title": "Precision",
+      "description": "Of all positive predictions, how many were correct. Important when false positives are costly.",
+      "interpretation": "Good: >0.8, Fair: 0.6-0.8, Poor: <0.6",
+      "icon": "🔬"
+    },
+    "recall": {
+      "title": "Recall (Sensitivity)",
+      "description": "Of all actual positives, how many were found. Important when false negatives are costly.",
+      "interpretation": "Good: >0.8, Fair: 0.6-0.8, Poor: <0.6",
+      "icon": "🔎"
+    },
+    "f1_score": {
+      "title": "F1 Score",
+      "description": "Harmonic mean of precision and recall. Balanced measure of model performance.",
+      "interpretation": "Good: >0.8, Fair: 0.6-0.8, Poor: <0.6",
+      "icon": "⚡"
+    },
+    "training_time": {
+      "title": "Training Time",
+      "description": "Time taken to train the model. Faster is generally better for production use.",
+      "interpretation": "Quick: <1s, Moderate: 1-10s, Slow: >10s",
+      "icon": "⏱️"
+    },
+    "improvement": {
+      "title": "Augmentation Improvement",
+      "description": "Performance gain from using augmented data. Positive values indicate useful augmentation.",
+      "interpretation": "Excellent: >5%, Good: 2-5%, Neutral: -2 to 2%, Poor: <-2%",
+      "icon": "📈"
+    }
+  }
+}

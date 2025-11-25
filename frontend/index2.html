@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦸AURAS - A Unified tool for Assessing the quality of Synthetic data
+representation</title>
+    <link rel="stylesheet" href="style2.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@2.27.0/plotly.min.js"></script>
+    <style>
+        .augmented-files-list {
+            margin-top: 1rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .augmented-file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .augmented-file-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .remove-file-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-file-btn:hover {
+            background: #dc2626;
+        }
+        </style>
+</head>
+<body>
+    <!-- Onboarding Overlay -->
+    <div class="onboarding-overlay hidden" id="onboardingOverlay">
+        <div class="onboarding-modal">
+            <button class="onboarding-skip" id="skipOnboarding">Skip ✕</button>
+            <div class="onboarding-step active" data-step="1">
+                <div class="onboarding-icon">👋</div>
+                <h2>Welcome to AURAS!</h2>
+                <p>Your AI-powered Data Augmentation Quality Assessment Platform</p>
+                <p class="onboarding-detail">Evaluate synthetic data across 4 dimensions: Fidelity, Diversity, Privacy, and now <strong>Utility</strong> with ML training!</p>
+                <button class="btn btn-primary onboarding-next">Next →</button>
+            </div>
+            <div class="onboarding-step" data-step="2">
+                <div class="onboarding-icon">📤</div>
+                <h2>Step 1: Upload or Load Data</h2>
+                <p>Upload CSV/Parquet files or load directly from your database</p>
+                <p class="onboarding-detail">New in v3.0: Connect to MySQL or PostgreSQL databases and load datasets with custom SQL queries.</p>
+                <button class="btn btn-secondary onboarding-prev">← Back</button>
+                <button class="btn btn-primary onboarding-next">Next →</button>
+            </div>
+            <div class="onboarding-step" data-step="3">
+                <div class="onboarding-icon">🔍</div>
+                <h2>Step 2: Analyze Quality</h2>
+                <p>Get comprehensive metrics across all dimensions</p>
+                <p class="onboarding-detail">View detailed metrics for Fidelity (distribution similarity), Diversity (data variety), Privacy (re-identification risk), and Utility (ML performance).</p>
+                <button class="btn btn-secondary onboarding-prev">← Back</button>
+                <button class="btn btn-primary onboarding-next">Next →</button>
+            </div>
+            <div class="onboarding-step" data-step="4">
+                <div class="onboarding-icon">🤖</div>
+                <h2>Step 3: Get AI Insights</h2>
+                <p>Ollama-powered explanations and improvement suggestions</p>
+                <p class="onboarding-detail">Ask AI to explain your metrics or generate prioritized improvement suggestions. All powered by local LLM.</p>
+                <button class="btn btn-secondary onboarding-prev">← Back</button>
+                <button class="btn btn-primary onboarding-next">Next →</button>
+            </div>
+            <div class="onboarding-step" data-step="5">
+                <div class="onboarding-icon">💾</div>
+                <h2>Step 4: Export & Track</h2>
+                <p>Professional reports and analysis history</p>
+                <p class="onboarding-detail">Export as PDF, Excel, or JSON. All analyses are saved to database for future reference.</p>
+                <button class="btn btn-secondary onboarding-prev">← Back</button>
+                <button class="btn btn-primary" id="startOnboarding">Get Started! 🚀</button>
+            </div>
+            <div class="onboarding-dots">
+                <span class="dot active" data-step="1"></span>
+                <span class="dot" data-step="2"></span>
+                <span class="dot" data-step="3"></span>
+                <span class="dot" data-step="4"></span>
+                <span class="dot" data-step="5"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon flying-hero" id="heroIcon">🦸</span>
+                <h1>AURAS</h1>
+            </div>
+            <p class="tagline">Complete Data Augmentation Quality Assessment Platform</p>
+            <div class="header-buttons">
+                <!-- NEW: Compare Models/Datasets Button -->
+                <a href="index.html"
+                   id="btn-open-compare"
+                   class="btn btn-compare"
+                   role="button"
+                   aria-label="Compare multiple datasets and models"
+                   title="Compare datasets side-by-side">
+                    Homepage
+                </a>
+                <a href="synthetic_generator.html"
+                   id="btn-open-generate"
+                   class="btn btn-compare"
+                   role="button"
+                   aria-label="Generate data"
+                   title="Generate synthetic data">
+                    Generate
+                </a>
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <button class="settings-btn" id="helpBtn" title="Show tutorial">❓</button>
+                <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settingsModal">
+            <div class="modal-content">
+                <span class="close" id="closeSettings">&times;</span>
+                <h2>⚙️ Settings</h2>
+
+                <div class="settings-section">
+                    <h3>🤖 Ollama Configuration</h3>
+                    <label for="ollamaModel">Select Model:</label>
+                    <select id="ollamaModel">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <p class="settings-info" id="ollamaStatus">Checking Ollama availability...</p>
+                    <button class="btn btn-secondary" id="refreshModels">🔄 Refresh Models</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>📝 Explanation Detail Level</h3>
+                    <select id="explanationLevel">
+                        <option value="low">Low - Brief summary (2-3 sentences)</option>
+                        <option value="medium" selected>Medium - Balanced detail</option>
+                        <option value="detailed">Detailed - Comprehensive analysis</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Config Modal -->
+        <div class="modal" id="dbModal">
+            <div class="modal-content">
+                <span class="close" id="closeDbModal">&times;</span>
+                <h2>🗄️ Load from Database</h2>
+
+                <div class="db-config-section">
+                    <h3>Select Database Type</h3>
+                    <div class="db-type-selector">
+                        <div class="db-type-option" data-type="mysql">
+                            <div class="db-type-icon">🐬</div>
+                            <div class="db-type-name">MySQL</div>
+                        </div>
+                        <div class="db-type-option" data-type="postgresql">
+                            <div class="db-type-icon">🐘</div>
+                            <div class="db-type-name">PostgreSQL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="db-config-section">
+                    <div class="db-form-group">
+                        <label>Host:</label>
+                        <input type="text" id="dbHost" value="localhost" placeholder="localhost">
+                    </div>
+                    <div class="db-form-group">
+                        <label>Port:</label>
+                        <input type="number" id="dbPort" value="5432" placeholder="5432">
+                    </div>
+                    <div class="db-form-group">
+                        <label>Database:</label>
+                        <input type="text" id="dbDatabase" placeholder="database_name">
+                    </div>
+                    <div class="db-form-group">
+                        <label>User:</label>
+                        <input type="text" id="dbUser" placeholder="username">
+                    </div>
+                    <div class="db-form-group">
+                        <label>Password:</label>
+                        <input type="password" id="dbPassword" placeholder="password">
+                    </div>
+                    <div class="db-form-group">
+                        <label>SQL Query:</label>
+                        <textarea id="dbQuery" placeholder="SELECT * FROM table_name LIMIT 1000"></textarea>
+                    </div>
+                </div>
+
+                <div class="db-config-section">
+                    <label>Load as:</label>
+                    <select id="dbDatasetType">
+                        <option value="original">Original Dataset</option>
+                        <option value="augmented">Augmented Dataset</option>
+                    </select>
+                </div>
+
+                <div class="db-actions">
+                    <button class="btn btn-secondary" id="testDbConnection">🔍 Test Connection</button>
+                    <button class="btn btn-primary" id="loadFromDb">📥 Load Dataset</button>
+                </div>
+
+                <div class="db-status" id="dbStatus" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="upload-card">
+                <h2>📤 Upload Your Datasets</h2>
+                <p class="description">Compare original dataset with augmented version</p>
+
+                <div class="upload-grid">
+                    <div class="upload-box">
+                        <label for="originalFile" class="upload-label">
+                            <div class="upload-icon">📊</div>
+                            <span class="upload-title">Original Dataset</span>
+                            <span class="upload-hint">CSV or Parquet</span>
+                            <input type="file" id="originalFile" accept=".csv,.parquet,.pq" />
+                            <span class="file-name" id="originalFileName">No file selected</span>
+                        </label>
+                    </div>
+
+                    <div class="upload-box" id="augmentedUploadBox">
+                        <label for="augmentedFiles" class="upload-label">
+                            <div class="upload-icon">📈</div>
+                            <span class="upload-title">Augmented Datasets</span>
+                            <span class="upload-hint">CSV or Parquet (multiple)</span>
+                            <input type="file" id="augmentedFiles" accept=".csv,.parquet,.pq" multiple />
+                            <span class="file-name" id="augmentedFilesName">No files selected</span>
+                        </label>
+                        <div class="augmented-files-list" id="augmentedFilesList"></div>
+                    </div>
+                </div>
+
+                <div class="upload-actions">
+                    <button class="btn btn-secondary" id="loadFromDbBtn">
+                        🗄️ Load from Database
+                    </button>
+                    <button class="btn btn-primary" id="analyzeBtn" disabled>
+                        🔍 Analyze Datasets
+                    </button>
+                </div>
+
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Analysis in progress...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <!-- Overall Score -->
+            <div class="score-card">
+                <h2>🎯 Overall Score</h2>
+                <div class="score-display">
+                    <div class="score-circle">
+                        <span class="score-value" id="overallScore">0.0</span>
+                        <span class="score-label" id="overallRating">-</span>
+                    </div>
+                    <div class="score-breakdown">
+                        <div class="score-item">
+                            <span class="score-category">Fidelity</span>
+                            <div class="score-bar">
+                                <div class="score-bar-fill" id="fidelityBar" style="width: 0%"></div>
+                            </div>
+                            <span class="score-number" id="fidelityScore">0.0</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-category">Diversity</span>
+                            <div class="score-bar">
+                                <div class="score-bar-fill" id="diversityBar" style="width: 0%"></div>
+                            </div>
+                            <span class="score-number" id="diversityScore">0.0</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-category">Privacy</span>
+                            <div class="score-bar">
+                                <div class="score-bar-fill" id="privacyBar" style="width: 0%"></div>
+                            </div>
+                            <span class="score-number" id="privacyScore">0.0</span>
+                        </div>
+                        <div class="score-item" id="utilityScoreItem">
+                            <span class="score-category">Utility</span>
+                            <div class="score-bar">
+                                <div class="score-bar-fill" id="utilityBar" style="width: 0%"></div>
+                            </div>
+                            <span class="score-number" id="utilityScore">0.0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="fidelity">✅ Fidelity</button>
+                <button class="tab-btn" data-tab="diversity">📊 Diversity</button>
+                <button class="tab-btn" data-tab="privacy">🔒 Privacy</button>
+                <button class="tab-btn" data-tab="utility">🎯 Utility</button>
+                <button class="tab-btn" data-tab="suggestions">💡 Suggestions</button>
+                <button class="tab-btn" data-tab="explain">🤖 Explainability</button>
+                <button class="tab-btn" data-tab="summary">📋 Summary</button>
+            </div>
+
+            <!-- Fidelity Tab -->
+            <div class="tab-content active" id="fidelityTab">
+                <h3>Fidelity Metrics</h3>
+                <p class="tab-description">Measures how closely synthetic data resembles real data</p>
+                <div class="metrics-grid" id="fidelityMetrics"></div>
+                <div class="chart-container">
+                    <canvas id="fidelityChart"></canvas>
+                </div>
+                <div class="heatmap-container">
+                    <h4 class="heatmap-title">📊 Information Loss Heatmap</h4>
+                    <div id="infoLossHeatmap" class="heatmap-canvas"></div>
+                </div>
+            </div>
+
+            <!-- Diversity Tab -->
+            <div class="tab-content" id="diversityTab">
+                <h3>Diversity Metrics</h3>
+                <p class="tab-description">Measures the variability of synthetic data</p>
+                <div class="metrics-grid" id="diversityMetrics"></div>
+                <div class="chart-container">
+                    <canvas id="diversityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Privacy Tab -->
+            <div class="tab-content" id="privacyTab">
+                <h3>Privacy Metrics</h3>
+                <p class="tab-description">Evaluates re-identification risk</p>
+                <div class="metrics-grid" id="privacyMetrics"></div>
+                <div class="chart-container">
+                    <canvas id="privacyChart"></canvas>
+                </div>
+                <div class="heatmap-container">
+                    <h4 class="heatmap-title">🔒 Privacy Risk Heatmap</h4>
+                    <div id="privacyRiskHeatmap" class="heatmap-canvas"></div>
+                </div>
+            </div>
+
+            <!-- Utility Tab -->
+            <div class="tab-content" id="utilityTab">
+                <h3>🎯 Utility Analysis - ML Model Performance</h3>
+                <p class="tab-description">Train ML models to evaluate real-world utility of augmented data</p>
+
+                <div class="utility-config" id="utilityConfig">
+                    <h4>Configuration</h4>
+                    <div class="db-form-group">
+                        <label>Target Column (for classification):</label>
+                        <input type="text" id="targetColumn" placeholder="e.g., label, class, target">
+                    </div>
+
+                    <h4>Select Models to Train</h4>
+
+                    <div class="model-selector" id="modelSelector">
+                        <!-- Modelli base -->
+                        <div class="model-option" data-model="logistic_regression">
+                            <div class="model-option-icon">📊</div>
+                            <div class="model-option-name">Logistic Regression</div>
+                            <div class="model-option-desc">Fast, interpretable</div>
+                        </div>
+
+                        <div class="model-option" data-model="random_forest">
+                            <div class="model-option-icon">🌲</div>
+                            <div class="model-option-name">Random Forest</div>
+                            <div class="model-option-desc">Robust, accurate</div>
+                        </div>
+
+                        <div class="model-option" data-model="svm">
+                            <div class="model-option-icon">🎯</div>
+                            <div class="model-option-name">SVM</div>
+                            <div class="model-option-desc">Good for high-dim</div>
+                        </div>
+
+                        <div class="model-option" data-model="knn">
+                            <div class="model-option-icon">👥</div>
+                            <div class="model-option-name">K-NN</div>
+                            <div class="model-option-desc">Simple, non-parametric</div>
+                        </div>
+
+                        <!-- Nuovi modelli aggiunti -->
+                        <div class="model-option" data-model="xgboost">
+                            <div class="model-option-icon">🚀</div>
+                            <div class="model-option-name">XGBoost</div>
+                            <div class="model-option-desc">Gradient boosting optimized</div>
+                        </div>
+
+                        <div class="model-option" data-model="decision_tree">
+                            <div class="model-option-icon">🌳</div>
+                            <div class="model-option-name">Decision Tree</div>
+                            <div class="model-option-desc">Interpretable tree model</div>
+                        </div>
+
+                        <div class="model-option" data-model="mlp">
+                            <div class="model-option-icon">🧠</div>
+                            <div class="model-option-name">Neural Network</div>
+                            <div class="model-option-desc">Multi-layer perceptron</div>
+                        </div>
+
+                        <div class="model-option" data-model="extra_trees">
+                            <div class="model-option-icon">🌲</div>
+                            <div class="model-option-name">Extra Trees</div>
+                            <div class="model-option-desc">Extremely randomized trees</div>
+                        </div>
+
+                        <div class="model-option" data-model="linear_svc">
+                            <div class="model-option-icon">📏</div>
+                            <div class="model-option-name">Linear SVC</div>
+                            <div class="model-option-desc">Linear support vector</div>
+                        </div>
+
+                        <!-- Altri 6 nuovi modelli aggiuntivi -->
+                        <div class="model-option" data-model="naive_bayes">
+                            <div class="model-option-icon">📨</div>
+                            <div class="model-option-name">Naive Bayes</div>
+                            <div class="model-option-desc">Fast probabilistic</div>
+                        </div>
+
+                        <div class="model-option" data-model="ada_boost">
+                            <div class="model-option-icon">🔄</div>
+                            <div class="model-option-name">AdaBoost</div>
+                            <div class="model-option-desc">Adaptive boosting</div>
+                        </div>
+
+                        <div class="model-option" data-model="gradient_boosting">
+                            <div class="model-option-icon">📈</div>
+                            <div class="model-option-name">Gradient Boosting</div>
+                            <div class="model-option-desc">Sequential boosting</div>
+                        </div>
+
+                        <div class="model-option" data-model="hist_gradient_boosting">
+                            <div class="model-option-icon">📊</div>
+                            <div class="model-option-name">Hist Gradient Boosting</div>
+                            <div class="model-option-desc">Fast histogram-based</div>
+                        </div>
+
+                        <div class="model-option" data-model="ridge_classifier">
+                            <div class="model-option-icon">🏔️</div>
+                            <div class="model-option-name">Ridge Classifier</div>
+                            <div class="model-option-desc">L2 regularized</div>
+                        </div>
+
+                        <div class="model-option" data-model="sgd_classifier">
+                            <div class="model-option-icon">⚡</div>
+                            <div class="model-option-name">SGD Classifier</div>
+                            <div class="model-option-desc">Stochastic gradient descent</div>
+                        </div>
+
+                        <!-- Altri 10 nuovi modelli aggiuntivi -->
+                        <div class="model-option" data-model="lda">
+                            <div class="model-option-icon">📉</div>
+                            <div class="model-option-name">LDA</div>
+                            <div class="model-option-desc">Linear Discriminant Analysis</div>
+                        </div>
+
+                        <div class="model-option" data-model="qda">
+                            <div class="model-option-icon">📊</div>
+                            <div class="model-option-name">QDA</div>
+                            <div class="model-option-desc">Quadratic Discriminant Analysis</div>
+                        </div>
+
+                        <div class="model-option" data-model="passive_aggressive">
+                            <div class="model-option-icon">🛡️</div>
+                            <div class="model-option-name">Passive Aggressive</div>
+                            <div class="model-option-desc">Online learning</div>
+                        </div>
+
+                        <div class="model-option" data-model="perceptron">
+                            <div class="model-option-icon">⚡</div>
+                            <div class="model-option-name">Perceptron</div>
+                            <div class="model-option-desc">Simple linear classifier</div>
+                        </div>
+
+                        <div class="model-option" data-model="bagging">
+                            <div class="model-option-icon">🛍️</div>
+                            <div class="model-option-name">Bagging</div>
+                            <div class="model-option-desc">Bootstrap aggregating</div>
+                        </div>
+
+                        <div class="model-option" data-model="calibrated_cv">
+                            <div class="model-option-icon">🎯</div>
+                            <div class="model-option-name">Calibrated CV</div>
+                            <div class="model-option-desc">Probability calibrated</div>
+                        </div>
+
+                        <div class="model-option" data-model="dummy">
+                            <div class="model-option-icon">🤖</div>
+                            <div class="model-option-name">Dummy Classifier</div>
+                            <div class="model-option-desc">Baseline strategies</div>
+                        </div>
+
+                        <div class="model-option" data-model="gaussian_process">
+                            <div class="model-option-icon">📊</div>
+                            <div class="model-option-name">Gaussian Process</div>
+                            <div class="model-option-desc">Probabilistic classifier</div>
+                        </div>
+
+                    </div>
+
+                    <div class="utility-cv-controls" id="utilityCvControls">
+                      <label>
+                        <input type="checkbox" id="useCV" />
+                        Use Cross-Validation
+                      </label>
+
+                      <label for="cvFolds">
+                        Folds:
+                        <input type="number" id="cvFolds" min="2" max="20" value="5" />
+                      </label>
+
+                      <label for="cvMetric">
+                        Metric:
+                        <select id="cvMetric">
+                          <option value="accuracy">accuracy</option>
+                          <option value="f1_weighted">f1_weighted</option>
+                          <option value="precision_weighted">precision_weighted</option>
+                          <option value="recall_weighted">recall_weighted</option>
+                        </select>
+                      </label>
+
+                      <div class="cv-help" title="Cross-validation runs stratified K-fold on training data. Lower folds use less compute.">
+                        <span class="tooltip-icon">i</span>
+                        <span>Run CV to get mean ± std per model</span>
+                      </div>
+                    </div>
+
+
+                    <button class="btn btn-primary" id="trainModelsBtn">
+                        🚀 Train Models
+                    </button>
+                </div>
+
+                <div class="loading" id="utilityLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Training models... This may take 30-60 seconds...</p>
+                </div>
+
+                <div id="utilityResults" style="display: none;">
+                    <h4>Results</h4>
+                    <div id="utilityResultsContent"></div>
+                    <div class="chart-container">
+                        <canvas id="utilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suggestions Tab -->
+            <div class="tab-content" id="suggestionsTab">
+                <h3>💡 AI Improvement Suggestions</h3>
+                <p class="tab-description">Get prioritized recommendations to improve your synthetic data</p>
+
+                <button class="btn btn-primary" id="generateSuggestions">
+                    🤖 Generate Improvement Suggestions
+                </button>
+
+                <div class="loading" id="suggestionsLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing your metrics...</p>
+                </div>
+
+                <div class="suggestions-container" id="suggestionsContainer" style="display: none;">
+                    <h4>Recommendations</h4>
+                    <div id="suggestionsContent"></div>
+                </div>
+            </div>
+
+            <!-- Explainability Tab -->
+            <div class="tab-content" id="explainTab">
+                <h3>🤖 AI Explainability</h3>
+                <p class="tab-description">Get AI-powered explanations of your metrics using Ollama</p>
+
+                <div class="explain-section">
+                    <div class="explain-buttons">
+                        <button class="btn btn-explain" id="explainFidelity">
+                            🎯 Explain Fidelity Metrics
+                        </button>
+                        <button class="btn btn-explain" id="explainDiversity">
+                            📊 Explain Diversity Metrics
+                        </button>
+                        <button class="btn btn-explain" id="explainPrivacy">
+                            🔒 Explain Privacy Metrics
+                        </button>
+                        <button class="btn btn-explain" id="explainUtility" style="display: none;">
+                            🎯 Explain Utility Metrics
+                        </button>
+                    </div>
+
+                    <div class="custom-prompt">
+                        <h4>Custom Question</h4>
+                        <textarea id="customPrompt" placeholder="Ask anything about your metrics..." rows="4"></textarea>
+                        <button class="btn btn-primary" id="explainCustom">
+                            💬 Ask AI
+                        </button>
+                    </div>
+
+                    <div class="explanation-result" id="explanationResult" style="display: none;">
+                        <div class="explanation-header">
+                            <h4>🤖 AI Explanation</h4>
+                            <button class="close-explanation" id="closeExplanation">✕</button>
+                        </div>
+                        <div class="explanation-content markdown-content" id="explanationContent"></div>
+                        <div class="explanation-footer">
+                            <span id="explanationModel"></span>
+                        </div>
+                    </div>
+
+                    <div class="loading" id="explainLoading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>AI is thinking...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div class="tab-content" id="summaryTab">
+                <h3>📋 Dataset Summary</h3>
+                <div class="summary-grid" id="summaryContent"></div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-section">
+                <button class="btn btn-secondary" id="exportBtn">
+                    💾 Export JSON
+                </button>
+                <button class="btn btn-secondary" id="exportPdfBtn">
+                    📄 Export PDF Report
+                </button>
+                <button class="btn btn-secondary" id="exportExcelBtn">
+                    📊 Export Excel
+                </button>
+                <button class="btn btn-secondary" id="screenshotBtn">
+                    📸 Save Screenshot
+                </button>
+                <button class="btn btn-secondary" id="newAnalysisBtn">
+                    🔄 New Analysis
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🦸 AURAS<a href="#" id="viewHistory">📜 View History</a></p>
+        </footer>
+    </div>
+
+    <script src="script2.js"></script>
+</body>
+</html>

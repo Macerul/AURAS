@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURAS - Synthetic Data Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+    <style>
+        /* Additional styles specific to synthetic generator */
+        .technique-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .technique-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .technique-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .technique-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px var(--shadow);
+        }
+
+        .technique-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .technique-card.selected {
+            border-color: var(--secondary);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .technique-card.selected::before {
+            transform: scaleX(1);
+            background: var(--secondary);
+        }
+
+        .technique-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .technique-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .technique-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+
+        .technique-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+        }
+
+        .technique-badge.advanced {
+            background: var(--danger);
+        }
+
+        .technique-badge.basic {
+            background: var(--secondary);
+        }
+
+        .technique-badge.statistical {
+            background: var(--warning);
+        }
+
+        .params-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin: 2rem 0;
+            display: none;
+        }
+
+        .params-section.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .param-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .param-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .param-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .param-hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .generation-progress {
+            display: none;
+            margin: 2rem 0;
+        }
+
+        .generation-progress.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: var(--bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .progress-status {
+            margin-top: 1rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .results-section {
+            display: none;
+            margin: 2rem 0;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .select-all-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+
+        .select-all-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-buttons">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <button class="settings-btn" onclick="window.location.href='index.html'">
+                    Homepage
+                </button>
+            </div>
+            <div class="logo">
+                <span class="logo-icon flying-hero" onclick="flyAway()">🦸</span>
+            </div>
+            <h1>AURAS</h1>
+            <p class="tagline">Syntethic data generation</p>
+        </header>
+
+        <!-- Upload Section -->
+    <div class ="container" id="tutto">
+        <div class="upload-card">
+            <h2>📁 Upload Original Dataset</h2>
+            <p class="description">Upload your dataset to generate its synthetic versions with different methodologies</p>
+
+            <div class="upload-grid">
+                <div class="upload-box">
+                    <label for="datasetFile" class="upload-label">
+                        <span class="upload-icon">📊</span>
+                        <span class="upload-title">Dataset Originale</span>
+                        <span class="upload-hint">CSV o Parquet</span>
+                    </label>
+                    <input type="file" id="datasetFile" accept=".csv,.parquet,.pq" onchange="handleFileUpload(this)">
+                    <div class="file-name" id="datasetFileName"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technique Selection -->
+        <div class="upload-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>🔧 Select generation method</h2>
+                <button class="select-all-btn" onclick="toggleSelectAll()">Select All</button>
+            </div>
+            <p class="description">Select one or more methods</p>
+
+            <div class="technique-grid" id="techniqueGrid">
+                <!-- Techniques will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Parameters Section -->
+        <div class="params-section" id="paramsSection">
+            <h2>⚙️ Generation Parameters</h2>
+            <p class="description">Configure parameters</p>
+
+            <div class="param-group">
+                <label class="param-label">Number of samples to be generated</label>
+                <input type="number" class="param-input" id="numSamples" value="1000" min="100" max="100000">
+                <p class="param-hint">Number of samples to generate for each method</p>
+            </div>
+
+            <div class="param-group">
+                <label class="param-label">Random Seed (optional)</label>
+                <input type="number" class="param-input" id="randomSeed" placeholder="42">
+                <p class="param-hint">Seed for reproducibility</p>
+            </div>
+
+            <div id="advancedParams"></div>
+
+            <button class="btn btn-primary" onclick="generateSyntheticData()" id="generateBtn">
+                <span>🚀</span>
+                Generate Synthetic Data
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="generation-progress" id="progressSection">
+            <h2>⏳ Generating...</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
+            </div>
+            <p class="progress-status" id="progressStatus">Initialization...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <h2>✅ Results</h2>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+        <div class="export-section">
+            <button class="btn btn-secondary" id="screenshotBtn">
+            📸 Save Screenshot
+            </button>
+        </div>
+    </div>
+    </div>
+     <!-- Export Buttons -->
+
+    <script>
+        // Techniques configuration
+        const techniques = [
+            {
+                id: 'smote',
+                name: 'SMOTE',
+                icon: '🎯',
+                description: 'Synthetic Minority Over-sampling Technique',
+                category: 'statistical',
+                params: []
+            },
+            {
+                id: 'adasyn',
+                name: 'ADASYN',
+                icon: '🎲',
+                description: 'Adaptive Synthetic Sampling',
+                category: 'statistical',
+                params: []
+            },
+            {
+                id: 'gaussian_copula',
+                name: 'Gaussian Copula',
+                icon: '📈',
+                description: 'Model dependencies between variables with Gaussian copulas',
+                category: 'statistical',
+                params: []
+            },
+            {
+                id: 'ctgan',
+                name: 'CTGAN',
+                icon: '🤖',
+                description: 'Conditional Tabular GAN',
+                category: 'advanced',
+                params: [
+                    { name: 'epochs', label: 'Epochs', type: 'number', default: 300, hint: 'Numero di epoche di training' },
+                    { name: 'batch_size', label: 'Batch Size', type: 'number', default: 500, hint: 'Dimensione batch' }
+                ]
+            },
+            {
+                id: 'tvae',
+                name: 'TVAE',
+                icon: '🧠',
+                description: 'Tabular Variational AutoEncoder',
+                category: 'advanced',
+                params: [
+                    { name: 'epochs', label: 'Epochs', type: 'number', default: 300, hint: 'Numero di epoche di training' }
+                ]
+            },
+           {
+                id: 'smotecdnn',
+                name: 'SMOTECDNN',
+                icon: '🏠',
+                description: 'Synthetic minority oversampling using edited displacement-based k-nearest neighbors',
+                category: 'advanced',
+                params: [
+                    { name: 'n_neighbors', label: 'N Neighbors', type: 'number', default: 5, hint: 'Number of neighbors used for CDNN editing' },
+                    { name: 'kind_sel', label: 'Type of selection', type: 'string', default: 'cd', hint: 'Selection rule: “cd” or “all”' },
+                    { name: 'smote_strategy', label: 'SMOTE Strategy', type: 'string', default: 'auto', hint: 'Sampling strategy used by SMOTE' },
+                    { name: 'cdnn_strategy', label: 'CDNN Strategy', type: 'string', default: 'all', hint: 'How CDNN chooses edited neighbors' }
+
+                ]
+            },
+
+            {
+                id: 'bayesian_network',
+                name: 'Bayesian Network',
+                icon: '🕸️',
+                description: 'Bayesian Network - Model causal relationships between variables',
+                category: 'statistical',
+                params: []
+            },
+            {
+                id: 'random_sampling',
+                name: 'Random Sampling',
+                icon: '🎰',
+                description: 'Random sampling with replacement',
+                category: 'basic',
+                params: []
+            },
+            {
+                id: 'noise_injection',
+                name: 'Noise Injection',
+                icon: '📊',
+                description: 'Adds Gaussian noise to the original data',
+                category: 'basic',
+                params: [
+                    { name: 'noise_level', label: 'Livello Rumore', type: 'number', default: 0.1, step: 0.01, hint: 'Deviazione standard del rumore (0.01-1.0)' }
+                ]
+            },
+            {
+                id: 'kde',
+                name: 'KDE Sampling',
+                icon: '📉',
+                description: 'Kernel Density Estimation',
+                category: 'statistical',
+                params: []
+            },
+            {
+                id: 'dummy',
+                name: 'Dummy Generator',
+                icon: '🎭',
+                description: 'Random generator based on column distributions',
+                category: 'basic',
+                params: []
+            }
+        ];
+
+        let selectedTechniques = [];
+        let uploadedFile = null;
+        let datasetInfo = null;
+
+        // Initialize techniques
+        function initTechniques() {
+            const grid = document.getElementById('techniqueGrid');
+            grid.innerHTML = techniques.map(tech => `
+                <div class="technique-card" data-id="${tech.id}" onclick="toggleTechnique('${tech.id}')">
+                    <span class="technique-icon">${tech.icon}</span>
+                    <div class="technique-name">${tech.name}</div>
+                    <div class="technique-description">${tech.description}</div>
+                    <span class="technique-badge ${tech.category}">${tech.category}</span>
+                </div>
+            `).join('');
+        }
+
+        // Toggle technique selection
+        function toggleTechnique(techId) {
+            const card = document.querySelector(`[data-id="${techId}"]`);
+            card.classList.toggle('selected');
+
+            if (selectedTechniques.includes(techId)) {
+                selectedTechniques = selectedTechniques.filter(id => id !== techId);
+            } else {
+                selectedTechniques.push(techId);
+            }
+
+            updateParamsSection();
+        }
+
+        // Toggle select all
+        function toggleSelectAll() {
+            const allCards = document.querySelectorAll('.technique-card');
+            const allSelected = selectedTechniques.length === techniques.length;
+
+            if (allSelected) {
+                allCards.forEach(card => card.classList.remove('selected'));
+                selectedTechniques = [];
+            } else {
+                allCards.forEach(card => card.classList.add('selected'));
+                selectedTechniques = techniques.map(t => t.id);
+            }
+
+            updateParamsSection();
+        }
+
+        // Update parameters section
+        function updateParamsSection() {
+            const paramsSection = document.getElementById('paramsSection');
+            const advancedParams = document.getElementById('advancedParams');
+
+            if (selectedTechniques.length > 0) {
+                paramsSection.classList.add('active');
+
+                // Add technique-specific parameters
+                const selectedTechs = techniques.filter(t => selectedTechniques.includes(t.id));
+                const techsWithParams = selectedTechs.filter(t => t.params && t.params.length > 0);
+
+                if (techsWithParams.length > 0) {
+                    advancedParams.innerHTML = `
+                        <h3 style="margin-top: 2rem; color: var(--primary);">Parametri Avanzati per Tecniche Selezionate</h3>
+                        ${techsWithParams.map(tech => `
+                            <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                                <h4 style="color: var(--text); margin-bottom: 1rem;">${tech.icon} ${tech.name}</h4>
+                                ${tech.params.map(param => `
+                                    <div class="param-group">
+                                        <label class="param-label">${param.label}</label>
+                                        <input
+                                            type="${param.type}"
+                                            class="param-input"
+                                            id="${tech.id}_${param.name}"
+                                            value="${param.default}"
+                                            ${param.step ? `step="${param.step}"` : ''}
+                                        >
+                                        <p class="param-hint">${param.hint}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    advancedParams.innerHTML = '';
+                }
+            } else {
+                paramsSection.classList.remove('active');
+            }
+        }
+
+        // Handle file upload
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                uploadedFile = file;
+                document.getElementById('datasetFileName').textContent = `📎 ${file.name}`;
+
+                // Simulate dataset info extraction
+                setTimeout(() => {
+                    const mockInfo = {
+                        rows: Math.floor(Math.random() * 10000) + 1000,
+                        columns: Math.floor(Math.random() * 20) + 5,
+                        size: (file.size / 1024).toFixed(2) + ' KB'
+                    };
+
+                    datasetInfo = mockInfo;
+
+                    document.getElementById('datasetInfoContent').innerHTML = `
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${mockInfo.rows}</div>
+                                <div class="stat-label">Righe</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${mockInfo.columns}</div>
+                                <div class="stat-label">Colonne</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${mockInfo.size}</div>
+                                <div class="stat-label">Dimensione</div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('datasetInfo').style.display = 'block';
+                }, 500);
+            }
+        }
+
+        // Generate synthetic data
+        async function generateSyntheticData() {
+            if (!uploadedFile) {
+                alert('⚠️ Carica un dataset prima di generare dati sintetici');
+                return;
+            }
+
+            if (selectedTechniques.length === 0) {
+                alert('⚠️ Seleziona almeno una tecnica di generazione');
+                return;
+            }
+
+            const numSamples = document.getElementById('numSamples').value;
+            const randomSeed = document.getElementById('randomSeed').value;
+
+            // Collect technique-specific parameters
+            const techniqueParams = {};
+            selectedTechniques.forEach(techId => {
+                const tech = techniques.find(t => t.id === techId);
+                if (tech.params && tech.params.length > 0) {
+                    techniqueParams[techId] = {};
+                    tech.params.forEach(param => {
+                        const input = document.getElementById(`${techId}_${param.name}`);
+                        if (input) {
+                            techniqueParams[techId][param.name] = input.value;
+                        }
+                    });
+                }
+            });
+
+            // Show progress
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('resultsSection').classList.remove('active');
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('dataset', uploadedFile);
+            formData.append('techniques', JSON.stringify(selectedTechniques));
+            formData.append('num_samples', numSamples);
+            formData.append('technique_params', JSON.stringify(techniqueParams));
+            if (randomSeed) {
+                formData.append('random_seed', randomSeed);
+            }
+
+            try {
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    updateProgress(progress, 'Generating...');
+                }, 500);
+
+                // Make API call
+                const response = await fetch('/api/generate-synthetic', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+
+                if (!response.ok) {
+                    throw new Error('Errore nella generazione');
+                }
+
+                const result = await response.json();
+
+                updateProgress(100, 'Generation process completed!');
+
+                // Show results
+                setTimeout(() => {
+                    document.getElementById('progressSection').classList.remove('active');
+                    displayResults(result);
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Errore durante la generazione: ' + error.message);
+                document.getElementById('progressSection').classList.remove('active');
+            }
+        }
+
+        // Update progress bar
+        function updateProgress(percent, status) {
+            const progressBar = document.getElementById('progressBar');
+            const progressStatus = document.getElementById('progressStatus');
+
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = Math.round(percent) + '%';
+            progressStatus.textContent = status;
+        }
+
+        // Display results
+        function displayResults(results) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+
+            resultsContent.innerHTML = results.generated_datasets.map(dataset => `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-title">
+                            ${techniques.find(t => t.id === dataset.technique)?.icon || '📊'}
+                            ${techniques.find(t => t.id === dataset.technique)?.name || dataset.technique}
+                        </div>
+                        <button class="btn btn-primary" onclick="downloadDataset('${dataset.file_path}', '${dataset.technique}')">
+                            <span>📥</span> Download
+                        </button>
+                    </div>
+                    <div class="result-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${dataset.rows}</div>
+                            <div class="stat-label">Generated Rows</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${dataset.columns}</div>
+                            <div class="stat-label">Columns</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${dataset.generation_time.toFixed(2)}s</div>
+                            <div class="stat-label">Generation Time</div>
+                        </div>
+                    </div>
+                    ${dataset.quality_score ? `
+                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                            <strong style="color: var(--secondary);">Quality Score: ${(dataset.quality_score * 100).toFixed(1)}%</strong>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            resultsSection.classList.add('active');
+        }
+
+        // Download dataset
+        function downloadDataset(filePath, technique) {
+            window.location.href = `/api/download-synthetic?file=${encodeURIComponent(filePath)}&technique=${technique}`;
+        }
+
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Flying hero animation
+        function flyAway() {
+            const hero = document.querySelector('.flying-hero');
+            hero.classList.add('fly');
+            setTimeout(() => hero.classList.remove('fly'), 2000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initTechniques();
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        });
+    </script>
+    <script>
+    // Funzione per catturare screenshot
+    async function captureScreenshot() {
+        try {
+            const node = document.getElementById('tutto');
+            if (!node) {
+                alert('⚠️ Non ci sono risultati da catturare!');
+                return;
+            }
+
+            const dataUrl = await htmlToImage.toPng(node, {
+                cacheBust: true,
+                backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark'
+                    ? '#0f172a'
+                    : '#f8fafc'
+            });
+
+            const link = document.createElement('a');
+            link.download = `heroes_screenshot_${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (error) {
+            alert(`❌ Screenshot failed: ${error.message}`);
+        }
+    }
+
+    // Collegamento al bottone
+    document.getElementById('screenshotBtn').addEventListener('click', captureScreenshot);
+</script>
+</body>
+</html>
