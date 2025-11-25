@@ -1,4 +1,3 @@
-// Heroes - Frontend JavaScript
 // API Configuration
 //const API_URL = 'http://localhost:50088/api';
 const API_URL = (() => {
@@ -2043,7 +2042,7 @@ async function exportJSON() {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `heroes_analysis_${Date.now()}.json`;
+    link.download = `auras_analysis_${Date.now()}.json`;
     link.click();
     URL.revokeObjectURL(url);
 }
@@ -2071,7 +2070,7 @@ async function exportPDF() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `heroes_report_${Date.now()}.pdf`;
+            link.download = `auras_report_${Date.now()}.pdf`;
             link.click();
             URL.revokeObjectURL(url);
         } else {
@@ -2100,7 +2099,7 @@ async function exportExcel() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `heroes_report_${Date.now()}.xlsx`;
+            link.download = `auras_report_${Date.now()}.xlsx`;
             link.click();
             URL.revokeObjectURL(url);
         } else {
@@ -2123,7 +2122,7 @@ async function captureScreenshot() {
         });
 
         const link = document.createElement('a');
-        link.download = `heroes_screenshot_${Date.now()}.png`;
+        link.download = `auras_screenshot_${Date.now()}.png`;
         link.href = dataUrl;
         link.click();
     } catch (error) {
