@@ -1733,7 +1733,7 @@ def generate_smotecdnn(df, num_samples, params, random_seed):
     - random_seed: seed per riproducibilità
     """
     try:
-        from HEROES.backend.SMOTECDNN.SMOTECDNN import SMOTECDNN, EditedCDNN
+        from backend.SMOTECDNN.SMOTECDNN import SMOTECDNN, EditedCDNN
         from sklearn.preprocessing import OneHotEncoder
         import numpy as np
         import pandas as pd
