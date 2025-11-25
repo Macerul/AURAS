@@ -239,6 +239,7 @@ def analyze():
         data = request.json
         orig_path = data.get('original_path')
         aug_path = data.get('augmented_path')
+        weights = data.get('weights', {'fidelity': 0.33, 'diversity': 0.33, 'privacy': 0.34})
         
         if not orig_path or not aug_path:
             return jsonify({'error': 'Path dei file non forniti'}), 400
@@ -288,7 +289,7 @@ def analyze():
         }
         
         # Calcola score aggregato
-        results['aggregate_score'] = calculate_aggregate_score(results)
+        results['aggregate_score'] = calculate_aggregate_score(results, weights)
 
         # Save to database
         try:
@@ -322,11 +323,19 @@ def analyze():
         }), 500
 
 
-def calculate_aggregate_score(results):
+def calculate_aggregate_score(results,  weights=None):
     """
     Calcola uno score aggregato basato su tutte le metriche,
     includendo k-anonymity e l-diversity nelle componenti privacy.
     """
+
+    if weights is None:
+        weights = {'fidelity': 0.33, 'diversity': 0.33, 'privacy': 0.34}
+
+    # Normalizza i pesi per assicurarsi che sommino a 1
+    total_weight = sum(weights.values())
+    if total_weight > 0:
+        weights = {k: v / total_weight for k, v in weights.items()}
     scores = {}
 
     # Fidelity score (più alto = migliore somiglianza)
@@ -417,14 +426,15 @@ def calculate_aggregate_score(results):
         # clamp
         scores['privacy'] = min(1.0, max(0.0, priv_score))
 
-    # Score complessivo (media semplice delle categorie disponibili)
     if len(scores) > 0:
-        overall = sum(scores.values()) / len(scores)
+        overall = sum(scores.get(k, 0) * weights.get(k, 0) for k in ['fidelity', 'diversity', 'privacy'])
+        print("Overall score:",overall)
     else:
         overall = 0.0
 
     return {
         'scores': scores,
+        'weights': weights,
         'overall': float(overall),
         'rating': get_rating(overall)
     }

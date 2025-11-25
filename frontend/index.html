@@ -222,6 +222,52 @@ representation</title>
                     <button class="btn btn-secondary" id="loadFromDbBtn">
                         🗄️ Load from Database
                     </button>
+
+                    <div class="weights-config" id="weightsConfig">
+                        <h3>⚖️ Customize Metric Weights</h3>
+                        <p class="description">Adjust the importance of each quality dimension (total must equal 100%)</p>
+
+                        <div class="weights-grid">
+                            <div class="weight-item">
+                                <label for="weightFidelity">
+                                    <span class="weight-icon">✅</span>
+                                    Fidelity
+                                </label>
+                                <input type="range" id="weightFidelity" min="0" max="100" value="33" step="1">
+                                <span class="weight-value" id="weightFidelityValue">33%</span>
+                            </div>
+
+                            <div class="weight-item">
+                                <label for="weightDiversity">
+                                    <span class="weight-icon">📊</span>
+                                    Diversity
+                                </label>
+                                <input type="range" id="weightDiversity" min="0" max="100" value="33" step="1">
+                                <span class="weight-value" id="weightDiversityValue">33%</span>
+                            </div>
+
+                            <div class="weight-item">
+                                <label for="weightPrivacy">
+                                    <span class="weight-icon">🔒</span>
+                                    Privacy
+                                </label>
+                                <input type="range" id="weightPrivacy" min="0" max="100" value="34" step="1">
+                                <span class="weight-value" id="weightPrivacyValue">34%</span>
+                            </div>
+                        </div>
+
+                        <div class="weights-total">
+                            <span>Total:</span>
+                            <span id="weightsTotal" class="total-value valid">100%</span>
+                            <span id="weightsWarning" class="weights-warning" style="display: none;">
+                                ⚠️ Total must equal 100%
+                            </span>
+                        </div>
+
+                        <button class="btn btn-secondary" id="resetWeights">🔄 Reset to Default</button>
+                    </div>
+
+
                     <button class="btn btn-primary" id="analyzeBtn" disabled>
                         🔍 Analyze Datasets
                     </button>

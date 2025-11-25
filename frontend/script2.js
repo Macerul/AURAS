@@ -13,6 +13,11 @@ const API_URL = (() => {
 let uploadedFiles = { original: null, augmented: [] };
 let uploadedPaths = { original: null, augmented: [] };
 let currentAugmentedIndex = 0; // Per gestire quale augmented dataset visualizzare
+let userWeights = {
+    fidelity: 0.33,
+    diversity: 0.33,
+    privacy: 0.34
+};
 
 let analysisResults = null;
 let charts = {};
@@ -142,6 +147,19 @@ function initializeEventListeners() {
 
     // Analysis
     document.getElementById('analyzeBtn').addEventListener('click', analyzeDatasets);
+
+    // Weight sliders
+    ['Fidelity', 'Diversity', 'Privacy'].forEach(category => {
+        const slider = document.getElementById(`weight${category}`);
+        const valueSpan = document.getElementById(`weight${category}Value`);
+
+        slider.addEventListener('input', (e) => {
+            valueSpan.textContent = e.target.value + '%';
+            updateWeightsTotal();
+        });
+    });
+
+    document.getElementById('resetWeights').addEventListener('click', resetWeights);
 
     // Utility
     document.querySelectorAll('.model-option').forEach(opt => {
@@ -389,7 +407,8 @@ async function analyzeDatasets() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     original_path: origPath,
-                    augmented_path: augPath
+                    augmented_path: augPath,
+                    weights: userWeights
                 })
             }).then(response => {
                 if (!response.ok) throw new Error('Analysis failed');
@@ -443,6 +462,18 @@ function displayResults(results) {
     const aggregate = firstResult.aggregate_score;
     document.getElementById('overallScore').textContent = (aggregate.overall * 100).toFixed(0);
     document.getElementById('overallRating').textContent = aggregate.rating;
+
+    if (aggregate.weights) {
+    const weightsInfo = `
+        <div class="weights-used">
+            <small>Weights used:
+                Fidelity ${(aggregate.weights.fidelity * 100).toFixed(0)}%,
+                Diversity ${(aggregate.weights.diversity * 100).toFixed(0)}%,
+                Privacy ${(aggregate.weights.privacy * 100).toFixed(0)}%
+            </small>
+        </div>
+    `;
+}
 
     // Category Scores
     if (aggregate.scores.fidelity !== undefined) {
@@ -1666,7 +1697,7 @@ async function trainModels() {
             const utilityScore = (data.results.overall_utility_score * 100).toFixed(0);
             document.getElementById('utilityScore').textContent = utilityScore;
             document.getElementById('utilityBar').style.width = `${utilityScore}%`;
-            document.getElementById('utilityScoreItem').style.display = 'true';
+            document.getElementById('utilityScoreItem').style.display= 'grid';
             document.getElementById('explainUtility').style.display = 'inline-block';
 
             // Salva i risultati utility per il dataset corrente
@@ -2231,6 +2262,52 @@ function addDatasetSelector(count) {
 
         console.log(`🎯 Selettore dataset creato con ${count} opzioni`);
     }
+}
+
+function updateWeightsTotal() {
+    const fidelity = parseInt(document.getElementById('weightFidelity').value);
+    const diversity = parseInt(document.getElementById('weightDiversity').value);
+    const privacy = parseInt(document.getElementById('weightPrivacy').value);
+
+    const total = fidelity + diversity + privacy;
+    const totalSpan = document.getElementById('weightsTotal');
+    const warning = document.getElementById('weightsWarning');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    totalSpan.textContent = total + '%';
+
+    if (total === 100) {
+        totalSpan.classList.add('valid');
+        totalSpan.classList.remove('invalid');
+        warning.style.display = 'none';
+
+        // Update global weights
+        userWeights = {
+            fidelity: fidelity / 100,
+            diversity: diversity / 100,
+            privacy: privacy / 100
+        };
+
+        // Enable analyze button if files are ready
+        checkFilesReady();
+    } else {
+        totalSpan.classList.remove('valid');
+        totalSpan.classList.add('invalid');
+        warning.style.display = 'block';
+        analyzeBtn.disabled = true;
+    }
+}
+
+function resetWeights() {
+    document.getElementById('weightFidelity').value = 33;
+    document.getElementById('weightDiversity').value = 33;
+    document.getElementById('weightPrivacy').value = 34;
+
+    document.getElementById('weightFidelityValue').textContent = '33%';
+    document.getElementById('weightDiversityValue').textContent = '33%';
+    document.getElementById('weightPrivacyValue').textContent = '34%';
+
+    updateWeightsTotal();
 }
 
 function updateDisplayedDataset(index) {
