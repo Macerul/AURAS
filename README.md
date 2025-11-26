@@ -1,6 +1,6 @@
 # AURAS - Data Augmentation Quality Assessment Tool
 
-AURAS (Augmentation Utility, Risk, and Assessment System) is a comprehensive tool designed to evaluate the quality of synthetic or augmented datasets. It provides a suite of metrics to assess Fidelity, Diversity, Privacy, and Utility, ensuring that your data augmentation strategies are effective and safe.
+AURAS (A Unified tool foR assessing the quality of Synthetic data representation) is a comprehensive tool designed to evaluate the quality of synthetic or augmented datasets. It provides a suite of metrics to assess Fidelity, Diversity, Privacy, and Utility, ensuring that your data augmentation strategies are effective and safe.
 
 ## 🚀 Features
 
@@ -111,7 +111,6 @@ If you prefer to run the backend and frontend locally:
 
 5.  **Generate Synthetic data**:
     *   Click **"Generate"** button to view the synthetic generation interface.
-    *   Select the desired models for generation, configure the parameters and click **"Generate Synthetic Data"** to start the 
-    *   generation process.
+    *   Select the desired models for generation, configure the parameters and click **"Generate Synthetic Data"** to start generating samples.
 
 
