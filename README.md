@@ -166,6 +166,8 @@ You can add more scikit-learn compatible models to the utility analysis.
     ```
 5.  **Usage**: You can now request this model via the API by passing `{"type": "my_new_model"}` in the `model_configs` list.### Adding a New Generation Algorithm
 
+### Adding a New Synthetic Data Generator
+
 You can add new synthetic data generation techniques to the system.
 
 **Step-by-Step Guide:**
