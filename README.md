@@ -1,6 +1,6 @@
 # AURAS - Data Augmentation Quality Assessment Tool
 
-AURAS (A Unified tool foR assessing the quality of Synthetic data representation) is a comprehensive tool designed to evaluate the quality of synthetic or augmented datasets. It provides a suite of metrics to assess Fidelity, Diversity, Privacy, and Utility, ensuring that your data augmentation strategies are effective and safe.
+AURAS (A Unified tool foR assessing the quality of Synthetic data representation) is a comprehensive tool designed to evaluate the quality of synthetic or augmented datasets. It provides a suite of metrics to assess Fidelity, Diversity, Privacy, and Utility, ensuring that your data augmentation strategies are effective and safe. A video demo is available on Youtube: https://youtu.be/h4l19InIRv4.
 
 ## 🚀 Features
 
