@@ -81,17 +81,17 @@ function initializeOnboarding() {
     document.querySelectorAll('.onboarding-dots .dot').forEach(dot => {
         dot.addEventListener('click', () => goToStep(parseInt(dot.dataset.step)));
     });
-    
+
     function goToStep(step) {
         document.querySelectorAll('.onboarding-step').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.onboarding-dots .dot').forEach(d => d.classList.remove('active'));
-        
+
         document.querySelector(`.onboarding-step[data-step="${step}"]`).classList.add('active');
         document.querySelector(`.onboarding-dots .dot[data-step="${step}"]`).classList.add('active');
-        
+
         currentStep = step;
     }
-    
+
     function completeOnboarding() {
         localStorage.setItem('heroesOnboardingComplete', 'true');
         document.getElementById('onboardingOverlay').classList.add('hidden');
@@ -117,7 +117,7 @@ function initializeEventListeners() {
     });
 
     // Flying hero
-    document.getElementById('heroIcon').addEventListener('click', function() {
+    document.getElementById('heroIcon').addEventListener('click', function () {
         this.classList.add('fly');
         setTimeout(() => this.classList.remove('fly'), 2000);
     });
@@ -134,7 +134,7 @@ function initializeEventListeners() {
         document.getElementById('dbModal').style.display = 'none';
     });
     document.querySelectorAll('.db-type-option').forEach(opt => {
-        opt.addEventListener('click', function() {
+        opt.addEventListener('click', function () {
             document.querySelectorAll('.db-type-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
             currentDbType = this.dataset.type;
@@ -158,11 +158,22 @@ function initializeEventListeners() {
         });
     });
 
+
     document.getElementById('resetWeights').addEventListener('click', resetWeights);
+
+    // Priority Buttons
+    const btnPrioritizeFidelity = document.getElementById('btnPrioritizeFidelity');
+    if (btnPrioritizeFidelity) btnPrioritizeFidelity.addEventListener('click', () => setPriorityWeight('fidelity'));
+
+    const btnPrioritizeDiversity = document.getElementById('btnPrioritizeDiversity');
+    if (btnPrioritizeDiversity) btnPrioritizeDiversity.addEventListener('click', () => setPriorityWeight('diversity'));
+
+    const btnPrioritizePrivacy = document.getElementById('btnPrioritizePrivacy');
+    if (btnPrioritizePrivacy) btnPrioritizePrivacy.addEventListener('click', () => setPriorityWeight('privacy'));
 
     // Utility
     document.querySelectorAll('.model-option').forEach(opt => {
-        opt.addEventListener('click', function() {
+        opt.addEventListener('click', function () {
             this.classList.toggle('selected');
             updateSelectedModels();
         });
@@ -171,12 +182,12 @@ function initializeEventListeners() {
     const useCVEl = document.getElementById('useCV');
     const cvContainer = document.getElementById('utilityCvControls');
     if (useCVEl && cvContainer) {
-      useCVEl.addEventListener('change', () => {
+        useCVEl.addEventListener('change', () => {
+            if (useCVEl.checked) cvContainer.classList.add('use-cv-enabled');
+            else cvContainer.classList.remove('use-cv-enabled');
+        });
+        // set initial state
         if (useCVEl.checked) cvContainer.classList.add('use-cv-enabled');
-        else cvContainer.classList.remove('use-cv-enabled');
-      });
-      // set initial state
-      if (useCVEl.checked) cvContainer.classList.add('use-cv-enabled');
     }
 
     document.getElementById('trainModelsBtn').addEventListener('click', trainModels);
@@ -463,7 +474,7 @@ function displayResults(results) {
     document.getElementById('overallRating').textContent = aggregate.rating;
 
     if (aggregate.weights) {
-    const weightsInfo = `
+        const weightsInfo = `
         <div class="weights-used">
             <small>Weights used:
                 Fidelity ${(aggregate.weights.fidelity * 100).toFixed(0)}%,
@@ -472,7 +483,7 @@ function displayResults(results) {
             </small>
         </div>
     `;
-}
+    }
 
     // Category Scores
     if (aggregate.scores.fidelity !== undefined) {
@@ -481,7 +492,7 @@ function displayResults(results) {
         document.getElementById('fidelityBar').style.width = `${fid}%`;
     }
     else {
-    console.log("fidelity undefined")
+        console.log("fidelity undefined")
 
     }
 
@@ -493,7 +504,7 @@ function displayResults(results) {
     else {
         console.log("diversity undefined")
 
-        }
+    }
 
     if (aggregate.scores.privacy !== undefined) {
         const priv = (aggregate.scores.privacy * 100).toFixed(0);
@@ -502,7 +513,7 @@ function displayResults(results) {
     }
     else {
         console.log("privacy undefined")
-        }
+    }
 
     console.log("firstResult.fidelity")
     console.log(firstResult.fidelity)
@@ -569,11 +580,11 @@ function displayFidelityMetrics(fidelity) {
             'q_function',
             qf.privacy_quality
         ));
-         //console.log(qf.privacy_quality);
-         //console.log(qf.q_score.toFixed(3))
+        //console.log(qf.privacy_quality);
+        //console.log(qf.q_score.toFixed(3))
     }
 
-        //Statistical Moments
+    //Statistical Moments
     if (fidelity.statistical_moments) {
         const sm = fidelity.statistical_moments;
         container.appendChild(createMetricCard(
@@ -609,7 +620,7 @@ function displayFidelityMetrics(fidelity) {
         ));
     }
 
-        // KL Divergence
+    // KL Divergence
     if (fidelity.kl_divergence) {
         const kl = fidelity.kl_divergence;
         container.appendChild(createMetricCard(
@@ -678,7 +689,7 @@ function displayDiversityMetrics(diversity) {
         ));
     }
 
-        // Silhouette Score
+    // Silhouette Score
     if (diversity.silhouette_score) {
         const sil = diversity.silhouette_score;
         container.appendChild(createMetricCard(
@@ -812,7 +823,7 @@ function displayPrivacyMetrics(privacy) {
         ));
     }
 
-// k-anonymity
+    // k-anonymity
     if (privacy.k_anonymity) {
         const k = privacy.k_anonymity;
         const kDisplay = k.k_anonymity !== undefined ? k.k_anonymity : '—';
@@ -1225,9 +1236,9 @@ function createFidelityChart(fidelity) {
 
     const theme = document.body.dataset.theme;
     const textColor = theme === 'dark' ? '#f1f5f9' : '#0f172a';
-    
+
     const data = {
-        labels: ['KS Similarity', 'PCA Similarity','MDD', 'Mean Absolute Dist', 'KL Div', 'JS Div', "Q-Function", "Statistical Moments"],
+        labels: ['KS Similarity', 'PCA Similarity', 'MDD', 'Mean Absolute Dist', 'KL Div', 'JS Div', "Q-Function", "Statistical Moments"],
         datasets: [{
             label: 'Fidelity Scores',
             data: [
@@ -1244,7 +1255,7 @@ function createFidelityChart(fidelity) {
             borderWidth: 0
         }]
     };
-    
+
     charts.fidelity = new Chart(ctx, {
         type: 'bar',
         data: data,
@@ -1269,7 +1280,7 @@ function createDiversityChart(diversity) {
 
     const theme = document.body.dataset.theme;
     const textColor = theme === 'dark' ? '#f1f5f9' : '#0f172a';
-    
+
     const data = {
         labels: ['Entropy', 'Coverage', 'Silhouette', 'DB Index', 'ICC', 'Uniformity', 'Intra Diversity', 'Feature Range Coverage'],
         datasets: [{
@@ -1289,7 +1300,7 @@ function createDiversityChart(diversity) {
             borderWidth: 2
         }]
     };
-    
+
     charts.diversity = new Chart(ctx, {
         type: 'radar',
         data: data,
@@ -1357,7 +1368,7 @@ function createPrivacyChart(privacy) {
                 title: { display: true, text: 'Privacy Components', color: textColor },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const label = context.label || '';
                             const v = context.raw;
                             // Provide readable tooltip for k and l
@@ -1484,7 +1495,7 @@ function createInfoLossHeatmap(fidelity) {
         font: { color: document.body.dataset.theme === 'dark' ? '#f1f5f9' : '#0f172a' }
     };
 
-    Plotly.newPlot('infoLossHeatmap', data, layout, {responsive: true});
+    Plotly.newPlot('infoLossHeatmap', data, layout, { responsive: true });
 }
 
 function createPrivacyRiskHeatmap(privacy) {
@@ -1518,7 +1529,7 @@ function createPrivacyRiskHeatmap(privacy) {
         font: { color: document.body.dataset.theme === 'dark' ? '#f1f5f9' : '#0f172a' }
     };
 
-    Plotly.newPlot('privacyRiskHeatmap', data, layout, {responsive: true});
+    Plotly.newPlot('privacyRiskHeatmap', data, layout, { responsive: true });
 }
 
 // ==================== UTILITY ANALYSIS ====================
@@ -1696,7 +1707,7 @@ async function trainModels() {
             const utilityScore = (data.results.overall_utility_score * 100).toFixed(0);
             document.getElementById('utilityScore').textContent = utilityScore;
             document.getElementById('utilityBar').style.width = `${utilityScore}%`;
-            document.getElementById('utilityScoreItem').style.display= 'grid';
+            document.getElementById('utilityScoreItem').style.display = 'grid';
             document.getElementById('explainUtility').style.display = 'inline-block';
 
             // Salva i risultati utility per il dataset corrente
@@ -1842,15 +1853,15 @@ function displaySuggestions(suggestionsText) {
 
         // Clean text
         text = text.replace(/\[PRIORITY:.*?\]/gi, '')
-                   .replace(/\[CATEGORY:.*?\]/gi, '')
-                   .replace(/HIGH\]/gi, '')
-                   .replace(/MEDIUM\]/gi, '')
-                   .replace(/LOW\]/gi, '')
-                   .replace(/FIDELITY\]/gi, '')
-                   .replace(/DIVERSITY\]/gi, '')
-                   .replace(/PRIVACY\]/gi, '')
-                   .replace(/UTILITY\]/gi, '')
-                   .trim();
+            .replace(/\[CATEGORY:.*?\]/gi, '')
+            .replace(/HIGH\]/gi, '')
+            .replace(/MEDIUM\]/gi, '')
+            .replace(/LOW\]/gi, '')
+            .replace(/FIDELITY\]/gi, '')
+            .replace(/DIVERSITY\]/gi, '')
+            .replace(/PRIVACY\]/gi, '')
+            .replace(/UTILITY\]/gi, '')
+            .trim();
 
         if (text) {
             html += `
@@ -2012,7 +2023,7 @@ async function sendExplanationRequest(prompt) {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
             // Render markdown
             contentDiv.innerHTML = marked.parse(data.explanation);
@@ -2222,7 +2233,7 @@ function removeAugmentedFile(index) {
 // Aggiorna checkFilesReady
 function checkFilesReady() {
     const ready = (uploadedFiles.original && uploadedFiles.augmented) ||
-                  (uploadedPaths.original && uploadedPaths.augmented);
+        (uploadedPaths.original && uploadedPaths.augmented);
     document.getElementById('analyzeBtn').disabled = !ready;
 }
 
@@ -2237,7 +2248,7 @@ function addDatasetSelector(count) {
         selector.className = 'dataset-selector';
 
         // Crea opzioni con nomi dei file
-        const options = Array.from({length: count}, (_, i) => {
+        const options = Array.from({ length: count }, (_, i) => {
             const fileName = uploadedFiles.augmented[i] ? uploadedFiles.augmented[i].name : `Augmented Dataset ${i + 1}`;
             return `<option value="${i}">${fileName}</option>`;
         }).join('');
@@ -2305,6 +2316,38 @@ function resetWeights() {
     document.getElementById('weightFidelityValue').textContent = '33%';
     document.getElementById('weightDiversityValue').textContent = '33%';
     document.getElementById('weightPrivacyValue').textContent = '34%';
+
+    updateWeightsTotal();
+}
+
+function setPriorityWeight(priority) {
+    const weights = {
+        fidelity: 12,
+        diversity: 13,
+        privacy: 12
+    };
+
+    if (priority === 'fidelity') {
+        weights.fidelity = 75;
+        weights.diversity = 12;
+        weights.privacy = 13;
+    } else if (priority === 'diversity') {
+        weights.fidelity = 13;
+        weights.diversity = 75;
+        weights.privacy = 12;
+    } else if (priority === 'privacy') {
+        weights.fidelity = 12;
+        weights.diversity = 13;
+        weights.privacy = 75;
+    }
+
+    document.getElementById('weightFidelity').value = weights.fidelity;
+    document.getElementById('weightDiversity').value = weights.diversity;
+    document.getElementById('weightPrivacy').value = weights.privacy;
+
+    document.getElementById('weightFidelityValue').textContent = weights.fidelity + '%';
+    document.getElementById('weightDiversityValue').textContent = weights.diversity + '%';
+    document.getElementById('weightPrivacyValue').textContent = weights.privacy + '%';
 
     updateWeightsTotal();
 }

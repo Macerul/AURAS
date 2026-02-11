@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🦸AURAS - A Unified tool for Assessing the quality of Synthetic data
-representation</title>
+        representation</title>
     <link rel="stylesheet" href="style2.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
@@ -49,8 +50,9 @@ representation</title>
         .remove-file-btn:hover {
             background: #dc2626;
         }
-        </style>
+    </style>
 </head>
+
 <body>
     <!-- Onboarding Overlay -->
     <div class="onboarding-overlay hidden" id="onboardingOverlay">
@@ -60,14 +62,16 @@ representation</title>
                 <div class="onboarding-icon">👋</div>
                 <h2>Welcome to AURAS!</h2>
                 <p>Your AI-powered Data Augmentation Quality Assessment Platform</p>
-                <p class="onboarding-detail">Evaluate synthetic data across 4 dimensions: Fidelity, Diversity, Privacy, and now <strong>Utility</strong> with ML training!</p>
+                <p class="onboarding-detail">Evaluate synthetic data across 4 dimensions: Fidelity, Diversity, Privacy,
+                    and now <strong>Utility</strong> with ML training!</p>
                 <button class="btn btn-primary onboarding-next">Next →</button>
             </div>
             <div class="onboarding-step" data-step="2">
                 <div class="onboarding-icon">📤</div>
                 <h2>Step 1: Upload or Load Data</h2>
                 <p>Upload CSV/Parquet files or load directly from your database</p>
-                <p class="onboarding-detail">New in v3.0: Connect to MySQL or PostgreSQL databases and load datasets with custom SQL queries.</p>
+                <p class="onboarding-detail">New in v3.0: Connect to MySQL or PostgreSQL databases and load datasets
+                    with custom SQL queries.</p>
                 <button class="btn btn-secondary onboarding-prev">← Back</button>
                 <button class="btn btn-primary onboarding-next">Next →</button>
             </div>
@@ -75,7 +79,8 @@ representation</title>
                 <div class="onboarding-icon">🔍</div>
                 <h2>Step 2: Analyze Quality</h2>
                 <p>Get comprehensive metrics across all dimensions</p>
-                <p class="onboarding-detail">View detailed metrics for Fidelity (distribution similarity), Diversity (data variety), Privacy (re-identification risk), and Utility (ML performance).</p>
+                <p class="onboarding-detail">View detailed metrics for Fidelity (distribution similarity), Diversity
+                    (data variety), Privacy (re-identification risk), and Utility (ML performance).</p>
                 <button class="btn btn-secondary onboarding-prev">← Back</button>
                 <button class="btn btn-primary onboarding-next">Next →</button>
             </div>
@@ -83,7 +88,8 @@ representation</title>
                 <div class="onboarding-icon">🤖</div>
                 <h2>Step 3: Get AI Insights</h2>
                 <p>Ollama-powered explanations and improvement suggestions</p>
-                <p class="onboarding-detail">Ask AI to explain your metrics or generate prioritized improvement suggestions. All powered by local LLM.</p>
+                <p class="onboarding-detail">Ask AI to explain your metrics or generate prioritized improvement
+                    suggestions. All powered by local LLM.</p>
                 <button class="btn btn-secondary onboarding-prev">← Back</button>
                 <button class="btn btn-primary onboarding-next">Next →</button>
             </div>
@@ -91,7 +97,8 @@ representation</title>
                 <div class="onboarding-icon">💾</div>
                 <h2>Step 4: Export & Track</h2>
                 <p>Professional reports and analysis history</p>
-                <p class="onboarding-detail">Export as PDF, Excel, or JSON. All analyses are saved to database for future reference.</p>
+                <p class="onboarding-detail">Export as PDF, Excel, or JSON. All analyses are saved to database for
+                    future reference.</p>
                 <button class="btn btn-secondary onboarding-prev">← Back</button>
                 <button class="btn btn-primary" id="startOnboarding">Get Started! 🚀</button>
             </div>
@@ -115,20 +122,12 @@ representation</title>
             <p class="tagline">Complete Data Augmentation Quality Assessment Platform</p>
             <div class="header-buttons">
                 <!-- NEW: Compare Models/Datasets Button -->
-                <a href="index.html"
-                   id="btn-open-compare"
-                   class="btn btn-compare"
-                   role="button"
-                   aria-label="Compare multiple datasets and models"
-                   title="Compare datasets side-by-side">
+                <a href="index.html" id="btn-open-compare" class="btn btn-compare" role="button"
+                    aria-label="Compare multiple datasets and models" title="Compare datasets side-by-side">
                     Homepage
                 </a>
-                <a href="synthetic_generator.html"
-                   id="btn-open-generate"
-                   class="btn btn-compare"
-                   role="button"
-                   aria-label="Generate data"
-                   title="Generate synthetic data">
+                <a href="synthetic_generator.html" id="btn-open-generate" class="btn btn-compare" role="button"
+                    aria-label="Generate data" title="Generate synthetic data">
                     Generate
                 </a>
                 <button class="theme-toggle" id="themeToggle" title="Toggle theme">
@@ -266,9 +265,22 @@ representation</title>
 
                     <div class="weights-config" id="weightsConfig">
                         <h3>⚖️ Customize Metric Weights</h3>
-                        <p class="description">Adjust the importance of each quality dimension (total must equal 100%)</p>
+                        <p class="description">Adjust the importance of each quality dimension (total must equal 100%)
+                        </p>
 
                         <div class="weights-grid">
+                            <div class="weight-buttons">
+                                <button class="btn btn-sm btn-secondary" id="btnPrioritizeFidelity"
+                                    data-hover="Prioritizing Fidelity will have a major impact on the overall score, emphasizing data resemblance.">Prioritize
+                                    Fidelity</button>
+                                <button class="btn btn-sm btn-secondary" id="btnPrioritizeDiversity"
+                                    data-hover="Prioritizing Diversity will have a major impact on the overall score, emphasizing data variety.">Prioritize
+                                    Diversity</button>
+                                <button class="btn btn-sm btn-secondary" id="btnPrioritizePrivacy"
+                                    data-hover="Prioritizing Privacy will have a major impact on the overall score, emphasizing data protection.">Prioritize
+                                    Privacy</button>
+                            </div>
+
                             <div class="weight-item">
                                 <label for="weightFidelity">
                                     <span class="weight-icon">✅</span>
@@ -572,30 +584,31 @@ representation</title>
                     </div>
 
                     <div class="utility-cv-controls" id="utilityCvControls">
-                      <label>
-                        <input type="checkbox" id="useCV" />
-                        Use Cross-Validation
-                      </label>
+                        <label>
+                            <input type="checkbox" id="useCV" />
+                            Use Cross-Validation
+                        </label>
 
-                      <label for="cvFolds">
-                        Folds:
-                        <input type="number" id="cvFolds" min="2" max="20" value="5" />
-                      </label>
+                        <label for="cvFolds">
+                            Folds:
+                            <input type="number" id="cvFolds" min="2" max="20" value="5" />
+                        </label>
 
-                      <label for="cvMetric">
-                        Metric:
-                        <select id="cvMetric">
-                          <option value="accuracy">accuracy</option>
-                          <option value="f1_weighted">f1_weighted</option>
-                          <option value="precision_weighted">precision_weighted</option>
-                          <option value="recall_weighted">recall_weighted</option>
-                        </select>
-                      </label>
+                        <label for="cvMetric">
+                            Metric:
+                            <select id="cvMetric">
+                                <option value="accuracy">accuracy</option>
+                                <option value="f1_weighted">f1_weighted</option>
+                                <option value="precision_weighted">precision_weighted</option>
+                                <option value="recall_weighted">recall_weighted</option>
+                            </select>
+                        </label>
 
-                      <div class="cv-help" title="Cross-validation runs stratified K-fold on training data. Lower folds use less compute.">
-                        <span class="tooltip-icon">i</span>
-                        <span>Run CV to get mean ± std per model</span>
-                      </div>
+                        <div class="cv-help"
+                            title="Cross-validation runs stratified K-fold on training data. Lower folds use less compute.">
+                            <span class="tooltip-icon">i</span>
+                            <span>Run CV to get mean ± std per model</span>
+                        </div>
                     </div>
 
 
@@ -661,7 +674,8 @@ representation</title>
 
                     <div class="custom-prompt">
                         <h4>Custom Question</h4>
-                        <textarea id="customPrompt" placeholder="Ask anything about your metrics..." rows="4"></textarea>
+                        <textarea id="customPrompt" placeholder="Ask anything about your metrics..."
+                            rows="4"></textarea>
                         <button class="btn btn-primary" id="explainCustom">
                             💬 Ask AI
                         </button>
@@ -719,4 +733,5 @@ representation</title>
 
     <script src="script2.js"></script>
 </body>
+
 </html>
