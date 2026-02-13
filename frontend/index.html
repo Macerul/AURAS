@@ -104,15 +104,34 @@
                 <span class="close" id="closeSettings">&times;</span>
                 <h2>⚙️ Settings</h2>
 
-                <div class="settings-section">
-                    <h3>🤖 Ollama Configuration</h3>
-                    <label for="ollamaModel">Select Model:</label>
-                    <select id="ollamaModel">
-                        <option value="">Loading models...</option>
-                    </select>
-                    <p class="settings-info" id="ollamaStatus">Checking Ollama availability...</p>
-                    <button class="btn btn-secondary" id="refreshModels">🔄 Refresh Models</button>
-                </div>
+                    <div class="settings-section">
+                        <h3>☁️ Ollama Source</h3>
+                        <div class="source-toggle">
+                            <label class="radio-label">
+                                <input type="radio" name="ollamaSource" value="local" checked>
+                                🏠 Local
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="ollamaSource" value="cloud">
+                                ☁️ Cloud
+                            </label>
+                        </div>
+                        
+                        <div id="apiKeySection" style="display: none; margin-top: 10px;">
+                            <label for="ollamaApiKey">Ollama Cloud API Key:</label>
+                            <input type="password" id="ollamaApiKey" placeholder="Enter API Key" class="api-key-input">
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>🤖 Model Selection</h3>
+                        <label for="ollamaModel">Select Model:</label>
+                        <select id="ollamaModel">
+                            <option value="">Loading models...</option>
+                        </select>
+                        <p class="settings-info" id="ollamaStatus">Checking Ollama availability...</p>
+                        <button class="btn btn-secondary" id="refreshModels">🔄 Refresh Models</button>
+                    </div>
 
                 <div class="settings-section">
                     <h3>📝 Explanation Detail Level</h3>

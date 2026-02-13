@@ -22,10 +22,12 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from imblearn.over_sampling import SMOTE, ADASYN
 from scipy import stats
+from scipy import stats
 from sklearn.neighbors import KernelDensity
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from db_manager import DatabaseManager, load_from_external_db, test_db_connection
 import traceback
+from ollama import Client
 
 class NumpyEncoder(json.JSONEncoder):
     """Encoder personalizzato per gestire tipi NumPy"""
@@ -479,21 +481,24 @@ def export_results():
         }), 500
 
 
-def get_ollama_url():
-    """
-    Restituisce l'URL di Ollama in base all'ambiente
-    - In Docker: usa il nome del servizio 'ollama'
-    - In sviluppo locale: usa 'localhost'
-    """
-    # Controlla se siamo in un container Docker
-    in_docker = os.path.exists('/.dockerenv')
 
-    if in_docker:
-        # Nel container Docker, usa il nome del servizio
-        return 'http://ollama:11434'
-    else:
-        # In sviluppo locale, usa localhost
-        return 'http://localhost:11434'
+def get_ollama_client(use_cloud=False, api_key=None):
+    """
+    Returns an initialized Ollama Client based on configuration.
+    
+    Args:
+        use_cloud (bool): If True, connects to Ollama Cloud
+        api_key (str): API Key for Cloud authentication
+    """
+    if use_cloud and api_key:
+        return Client(
+            host="https://ollama.com",
+            headers={'Authorization': 'Bearer ' + api_key}
+        )
+    
+    # Local configuration
+    host = 'http://ollama:11434' if os.path.exists('/.dockerenv') else 'http://localhost:11434'
+    return Client(host=host)
 
 @app.route('/api/explain', methods=['POST'])
 def explain_with_ollama():
@@ -505,52 +510,34 @@ def explain_with_ollama():
         model = data.get('model', 'llama3')
         prompt = data.get('prompt', '')
         metrics = data.get('metrics', {})
+        
+        # New parameters for Dual-Source support
+        use_cloud = data.get('use_cloud', False)
+        api_key = data.get('api_key')
+        
+        if use_cloud:
+            model = 'gpt-oss:20b'  # Enforce cloud model
 
         if not prompt:
             return jsonify({'error': 'Prompt is required'}), 400
 
-        # Invia richiesta a Ollama
-        import requests as req
+        client = get_ollama_client(use_cloud, api_key)
+        
+        # Use chat API which is generally more robust for instructions
+        response = client.chat(model=model, messages=[
+            {
+                'role': 'user',
+                'content': prompt,
+            },
+        ])
 
-        #ollama_url = 'http://localhost:11434/api/generate'
-        # USA L'URL DINAMICO
-        ollama_base_url = get_ollama_url()
-        ollama_url = f'{ollama_base_url}/api/generate'
-
-        payload = {
-            'model': model,
-            'prompt': prompt,
-            'stream': False
-        }
-
-        response = req.post(ollama_url, json=payload, timeout=60)
-
-        if response.status_code != 200:
-            return jsonify({
-                'error': 'Ollama request failed',
-                'details': f'Status code: {response.status_code}'
-            }), 500
-
-        ollama_response = response.json()
-        explanation = ollama_response.get('response', '')
+        explanation = response['message']['content']
 
         return jsonify({
             'success': True,
             'explanation': explanation,
             'model': model
         })
-
-    except req.exceptions.ConnectionError:
-        return jsonify({
-            'error': 'Cannot connect to Ollama',
-            'details': 'Make sure Ollama is running on http://localhost:11434'
-        }), 503
-
-    except req.exceptions.Timeout:
-        return jsonify({
-            'error': 'Ollama request timeout',
-            'details': 'The model took too long to respond'
-        }), 504
 
     except Exception as e:
         return jsonify({
@@ -563,83 +550,40 @@ def explain_with_ollama():
 @app.route('/api/ollama/models', methods=['GET'])
 def get_ollama_models():
     """
-    Ottiene la lista dei modelli disponibili in Ollama (gestisce più formati)
+    Ottiene la lista dei modelli disponibili in Ollama
     """
     try:
-        import requests as req
+        # Check params from query string since it's a GET
+        use_cloud = request.args.get('use_cloud') == 'true'
+        api_key = request.args.get('api_key')
 
-        # Provo prima /api/tags poi /api/models come fallback
-        '''
-        candidates = [
-            'http://localhost:11434/api/tags',
-            'http://localhost:11434/api/models',
-            'http://localhost:11434/api/list'
-        ]
-        '''
-        # USA L'URL DINAMICO
-        ollama_base_url = get_ollama_url()
+        if use_cloud:
+            # Cloud has a fixed model for this context
+            return jsonify({
+                'success': True,
+                'available': True,
+                'models': ['gpt-oss:20b']
+            })
 
-        # Provo prima /api/tags poi /api/models come fallback
-        candidates = [
-            f'{ollama_base_url}/api/tags',
-            f'{ollama_base_url}/api/models',
-            f'{ollama_base_url}/api/list'
-        ]
-
-        models = []
-        last_resp = None
-
-        for url in candidates:
-            try:
-                resp = req.get(url, timeout=3)
-                last_resp = resp
-                if resp.status_code != 200:
-                    continue
-                body = resp.json()
-                print("Ollama Request")
-                print(body)
-
-                # Possibili formati:
-                # 1) {"models": [{"name": "llama2"}, ...]}
-                if isinstance(body, dict) and 'models' in body:
-                    for m in body.get('models', []):
-                        # supportare sia dict con name sia stringhe
-                        if isinstance(m, dict) and 'name' in m:
-                            models.append(m['name'])
-                        elif isinstance(m, str):
-                            models.append(m)
-                # 2) lista semplice: ["llama2", "llama3"]
-                elif isinstance(body, list):
-                    for m in body:
-                        if isinstance(m, dict) and 'name' in m:
-                            models.append(m['name'])
-                        elif isinstance(m, str):
-                            models.append(m)
-                # 3) fallback: dict di tags -> keys
-                elif isinstance(body, dict):
-                    # tenta estrarre nomi noti
-                    for v in body.values():
-                        if isinstance(v, (str,)):
-                            models.append(v)
-                # se abbiamo almeno uno, usiamo questo risultato
-                if models:
-                    break
-            except Exception:
-                continue
-
-        if not models:
+        client = get_ollama_client(False, None)
+        try:
+            # Ollama library list method
+            response = client.list()
+            # response is typically {'models': [...]}
+            models = [m['name'] for m in response['models']]
+            
+            return jsonify({
+                'success': True,
+                'available': True,
+                'models': models
+            })
+        except Exception as e:
             return jsonify({
                 'success': False,
                 'available': False,
                 'models': [],
-                'error': f'No models found. Last response status: {getattr(last_resp, "status_code", None)}'
+                'error': str(e)
             }), 200
-
-        return jsonify({
-            'success': True,
-            'available': True,
-            'models': models
-        })
 
     except Exception as e:
         return jsonify({
@@ -759,37 +703,31 @@ def generate_suggestions():
     Generate improvement suggestions using Ollama
     """
     try:
-        import requests as req
-
         data = request.json
         model = data.get('model', 'llama3')
         metrics = data.get('metrics', {})
         analysis_id = data.get('analysis_id')
+        
+        # New parameters for Dual-Source support
+        use_cloud = data.get('use_cloud', False)
+        api_key = data.get('api_key')
+        
+        if use_cloud:
+            model = 'gpt-oss:20b'
 
         # Build comprehensive prompt
         prompt = build_improvement_prompt(metrics)
 
-        #ollama_url = 'http://localhost:11434/api/generate'
-        # USA L'URL DINAMICO
-        ollama_base_url = get_ollama_url()
-        ollama_url = f'{ollama_base_url}/api/generate'
+        client = get_ollama_client(use_cloud, api_key)
+        
+        response = client.chat(model=model, messages=[
+            {
+                'role': 'user',
+                'content': prompt,
+            },
+        ])
 
-        payload = {
-            'model': model,
-            'prompt': prompt,
-            'stream': False
-        }
-
-        response = req.post(ollama_url, json=payload, timeout=90)
-
-        if response.status_code != 200:
-            return jsonify({
-                'error': 'Ollama request failed',
-                'details': f'Status code: {response.status_code}'
-            }), 500
-
-        ollama_response = response.json()
-        suggestions_text = ollama_response.get('response', '')
+        suggestions_text = response['message']['content']
 
         # Parse suggestions and save to database
         if analysis_id:

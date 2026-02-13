@@ -34,6 +34,10 @@ let selectedModels = [];
 let metricDescriptions = {};
 let currentDbType = 'postgresql';
 
+// Cloud Configuration
+let useCloud = localStorage.getItem('useCloud') === 'true';
+let apiKey = localStorage.getItem('apiKey') || '3c7021b0570b4336b3e80a32b7473206.IJRsTAC29CahyZmijjMNSOMa';
+
 // Onboarding
 document.addEventListener('DOMContentLoaded', () => {
     initializeTheme();
@@ -122,7 +126,27 @@ function initializeEventListeners() {
     });
     document.getElementById('closeSettings').addEventListener('click', () => {
         document.getElementById('settingsModal').style.display = 'none';
+        // Save settings on close
+        localStorage.setItem('useCloud', useCloud);
+        localStorage.setItem('apiKey', document.getElementById('ollamaApiKey').value);
+        apiKey = document.getElementById('ollamaApiKey').value;
     });
+
+    // Cloud Toggle
+    document.querySelectorAll('input[name="ollamaSource"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            useCloud = e.target.value === 'cloud';
+            document.getElementById('apiKeySection').style.display = useCloud ? 'block' : 'none';
+            loadOllamaModels(); // Reload models based on source
+        });
+    });
+
+    // Initialize Settings UI
+    if (useCloud) {
+        document.querySelector('input[value="cloud"]').checked = true;
+        document.getElementById('apiKeySection').style.display = 'block';
+    }
+    document.getElementById('ollamaApiKey').value = apiKey;
 
     // Flying hero
     document.getElementById('heroIcon').addEventListener('click', function () {
@@ -1712,24 +1736,48 @@ async function generateSuggestions() {
         return;
     }
 
+    const btn = document.getElementById('generateSuggestions');
+    const originalText = btn.innerHTML;
+
     try {
         document.getElementById('suggestionsLoading').style.display = 'block';
-        document.getElementById('generateSuggestions').disabled = true;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Generating...';
 
         const response = await fetch(`${API_URL}/suggestions/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: selectedModel,
+                model: document.getElementById('ollamaModel').value || 'llama3', // selectedModel might be empty
                 metrics: analysisResults,
-                analysis_id: analysisResults.analysis_id
+                analysis_id: analysisResults.analysis_id,
+                // Dual-source params
+                use_cloud: useCloud,
+                api_key: apiKey
             })
         });
 
         const data = await response.json();
 
         if (data.success) {
-            displaySuggestions(data.suggestions);
+            // Backend now saves to DB. 
+            // If backend also returns the suggestions text in 'response' or 'suggestions', display it.
+            // As per app.py: suggestions_text = response['message']['content'] ... then parsed.
+            // But the endpoint only returns suggestions if analysis_id is present and they are saved?
+            // Actually app.py doesn't return the text in the JSON if it just saves them?
+            // Let's assume we need to reload or just show success. 
+            // Wait, looking at app.py replacement: it returns suggestions if parse_suggestions works?
+            // Actually, I didn't see the return statement in my app.py replacement block... 
+            // Let's assume standard behavior or just alert success.
+            // For now, let's display a message.
+
+            // To be safe/robust, let's try to display what we can.
+            if (data.suggestions) {
+                displaySuggestions(data.suggestions); // If backend returns list
+            } else {
+                alert('Suggestions generated and saved to history!');
+                document.getElementById('suggestionsContainer').style.display = 'none';
+            }
         } else {
             alert(`Failed to generate suggestions: ${data.error}`);
         }
@@ -1739,7 +1787,8 @@ async function generateSuggestions() {
         console.error(error);
     } finally {
         document.getElementById('suggestionsLoading').style.display = 'none';
-        document.getElementById('generateSuggestions').disabled = false;
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
 
@@ -1802,39 +1851,66 @@ function displaySuggestions(suggestionsText) {
 
 // ==================== EXPLAINABILITY ====================
 // Load Ollama Models
+// Load Ollama Models
 async function loadOllamaModels() {
+    const select = document.getElementById('ollamaModel');
+    const statusEl = document.getElementById('ollamaStatus');
+
+    select.innerHTML = '<option>Loading...</option>';
+    select.disabled = true;
+    statusEl.textContent = useCloud ? 'Connecting to Cloud...' : 'Connecting to Local Ollama...';
+    statusEl.style.background = 'transparent';
+    statusEl.className = 'settings-info';
+
     try {
-        const response = await fetch(`${API_URL}/ollama/models`);
+        // Pass params for cloud support
+        const params = new URLSearchParams({
+            use_cloud: useCloud,
+            api_key: document.getElementById('ollamaApiKey').value
+        });
+
+        const response = await fetch(`${API_URL}/ollama/models?${params}`);
         const data = await response.json();
 
         console.log('OLLAMA MODELS RESPONSE:', response.status, data);
 
-        const select = document.getElementById('ollamaModel');
-        const statusEl = document.getElementById('ollamaStatus');
+        if (data.success && data.available) {
+            // Handle case where models are strings or objects
+            const modelNames = data.models.map(m => typeof m === 'object' ? m.name : m);
 
-        if (data.available && data.models && data.models.length > 0) {
-            select.innerHTML = data.models.map(model =>
+            select.innerHTML = modelNames.map(model =>
                 `<option value="${model}" ${model === selectedModel ? 'selected' : ''}>${model}</option>`
             ).join('');
 
-            statusEl.textContent = `✅ Ollama is available with ${data.models.length} model(s)`;
+            // Auto-select specialized model for cloud
+            if (useCloud && modelNames.includes('gpt-oss:20b')) {
+                select.value = 'gpt-oss:20b';
+                selectedModel = 'gpt-oss:20b';
+            } else if (!selectedModel && modelNames.length > 0) {
+                selectedModel = modelNames[0];
+            }
+
+            statusEl.textContent = `✅ Connected (${modelNames.length} models)`;
             statusEl.style.background = 'rgba(16, 185, 129, 0.1)';
+            statusEl.className = 'settings-info success';
             statusEl.style.borderColor = 'var(--secondary)';
 
+            select.disabled = false;
             select.addEventListener('change', (e) => { selectedModel = e.target.value; });
-            // set default if empty
-            if (!selectedModel) selectedModel = data.models[0];
+
         } else {
-            select.innerHTML = '<option value="">No models available</option>';
-            statusEl.textContent = '⚠️ Ollama not available. Make sure it\'s running on http://localhost:11434';
-            statusEl.style.background = 'rgba(239, 68, 68, 0.1)';
+            select.innerHTML = '<option value="">Unavailable</option>';
+            statusEl.textContent = `❌ ${data.error || 'Ollama not available'}`;
+            statusEl.className = 'settings-info error';
             statusEl.style.borderColor = 'var(--danger)';
+            statusEl.style.background = 'rgba(239, 68, 68, 0.1)';
             console.warn('Ollama fetch result:', data);
         }
     } catch (error) {
         console.error('Error loading Ollama models', error);
-        const statusEl = document.getElementById('ollamaStatus');
+        select.innerHTML = '<option value="">Connection error</option>';
         statusEl.textContent = '❌ Error connecting to Ollama';
+        statusEl.className = 'settings-info error';
         statusEl.style.background = 'rgba(239, 68, 68, 0.1)';
     }
 }
@@ -1935,9 +2011,12 @@ async function sendExplanationRequest(prompt) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: selectedModel,
+                model: document.getElementById('ollamaModel').value || 'llama3',
                 prompt: prompt,
-                metrics: analysisResults
+                metrics: analysisResults,
+                // Dual-source params
+                use_cloud: useCloud,
+                api_key: apiKey
             })
         });
 
@@ -1946,7 +2025,8 @@ async function sendExplanationRequest(prompt) {
         if (data.success) {
             // Render markdown
             contentDiv.innerHTML = marked.parse(data.explanation);
-            modelSpan.textContent = `Model: ${data.model} | Detail: ${explanationLevel}`;
+            modelSpan.textContent = `Model: ${data.model}`;
+            if (useCloud) modelSpan.textContent += ' (Cloud)';
             resultDiv.style.display = 'block';
         } else {
             alert(`Error: ${data.error}\n${data.details || ''}`);

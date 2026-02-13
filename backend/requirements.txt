@@ -25,3 +25,4 @@ imbalanced-learn>=0.10.0
 # CTGAN e TVAE
 sdv>=1.0.0
 torch>=1.9.0
+ollama>=0.1.6
